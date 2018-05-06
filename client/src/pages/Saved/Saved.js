@@ -1,34 +1,21 @@
-import React, { Component } from "react";
-import { Link } from "react-router-dom";
-import { Col, Row, Container } from "../../components/Grid";
-import Jumbotron from "../../components/Jumbotron";
-import API from "../../utils/API";
+import React from "react";
 
-class Detail extends Component {
-  state = {
-    article: {}
-  };
-  componentDidMount() {
-    API.getArticle(this.props.match.params.id)
-      .then(res => this.setState({ article: res.data }))
-      .catch(err => console.log(err));
-  }
-
-  render() {
-    return (
-      <Container fluid>
-        <Row>
-          <Col size="md-12">
-            <Jumbotron>
-              <h1>
-                {this.state.article.title}
-              </h1>
-            </Jumbotron>
-          </Col>
-        </Row>
-      </Container>
-    );
-  }
-}
-
-export default Detail;
+const Saved = props =>
+<div className="container">
+<li className="list-group-item">
+<h4>
+  <span>
+    <em>{props.title}</em>
+    </span>
+    <span className="btn-group pull-right">
+    <a href={props.url} target="_blank">
+    <button className="btn btn-default">View Article</button>
+    </a>
+    <button className="btn btn-default" onClick={() => props.handleDeleteButton(props._id)}>Delete</button>
+    </span>
+  </h4>
+  <p>Date Published: {props.date}</p>
+  </li>
+</div>
+  
+export default Saved;

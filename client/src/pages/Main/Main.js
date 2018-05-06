@@ -1,118 +1,140 @@
 import React, { Component } from "react";
-import DeleteBtn from "../../components/DeleteBtn";
-import Jumbotron from "../../components/Jumbotron";
 import API from "../../utils/API";
-import { Link } from "react-router-dom";
-import { Col, Row, Container } from "../../components/Grid";
-import { List, ListItem } from "../../components/List";
-import { Input, TextArea, FormBtn } from "../../components/Form";
+import Nav from "../../components/Nav";
+import Saved from "../Saved";
+import Search from "../Search";
+import Results from "../Results";
 
-class Books extends Component {
+class Main extends Component {
+
   state = {
-    books: [],
-    title: "",
-    author: "",
-    synopsis: ""
+    topic: "",
+    startYear: "",
+    endYear: "",
+    articles: [],
+    saved: []
   };
 
+  // When the component mounts then render the saved articles
   componentDidMount() {
-    this.loadBooks();
+    this.getSavedArticles();
   }
 
-  loadBooks = () => {
-    API.getBooks()
-      .then(res =>
-        this.setState({ books: res.data, title: "", author: "", synopsis: "" })
-      )
-      .catch(err => console.log(err));
-  };
+  // Getting all saved articles from the DB
+  getSavedArticles = () => {
+    API.getSavedArticle()
+      .then((res) => {
+        this.setState({ saved: res.data });
+      });
+  }
 
-  deleteBook = id => {
-    API.deleteBook(id)
-      .then(res => this.loadBooks())
-      .catch(err => console.log(err));
-  };
+  //Handler for saving the article and sends it to the DB
+  handleSaveButton = (id) => {
+    const findArticleByID = this.state.articles.find((search) => search.id === id);
+    const newSave = {
+      title: findArticleByID.headline.main,
+      date: findArticleByID.pub_date,
+      url: findArticleByID.web_url
+    };
+    API.saveArticle(newSave)
+      .then(this.getSavedArticles());
+  }
 
-  handleInputChange = event => {
-    const { name, value } = event.target;
-    this.setState({
-      [name]: value
-    });
-  };
+  // Handler for deleting a saved article
+  handleDeleteButton = (id) => {
+    API.deleteArticle(id)
+      .then(this.getSavedArticles());
+  }
 
-  handleFormSubmit = event => {
+  // Handler when the submit button is clicked for searching articles
+  handleFormSubmit = (event) => {
     event.preventDefault();
-    if (this.state.title && this.state.author) {
-      API.saveBook({
-        title: this.state.title,
-        author: this.state.author,
-        synopsis: this.state.synopsis
+    API.getArticle(this.state.topic, this.state.startYear, this.state.endYear)
+      .then((res) => {
+        this.setState({ articles: res.data.response.docs })
       })
-        .then(res => this.loadBooks())
-        .catch(err => console.log(err));
-    }
-  };
+  }
+
+  // Handler to capture the start year that the user enters
+  handleStartYearChange = (event) => {
+    this.setState({ startYear: event.target.value })
+  }
+
+  // Handler to capture the end year that the user enters
+  handleEndYearChange = (event) => {
+    this.setState({ endYear: event.target.value })
+  }
+
+  // Handler to capture the topic that the user enters
+  handleTopicChange = (event) => {
+    this.setState({ topic: event.target.value })
+  }
+
+  // Render the articles based on the search
+  renderArticles() {
+    return this.state.articles.map(article => (
+      <Results
+        _id={article.id}
+        key={article.id}
+        title={article.headline.main}
+        date={article.pub_date}
+        url={article.web_url}
+        handleSaveButton={this.handleSaveButton}
+        getSavedArticles={this.getSavedArticles}
+      />
+    ));
+  }
+
+  // Render the articles that the user saved
+  renderSaved = () => {
+    return this.state.saved.map(save => (
+      <Saved
+        _id={save._id}
+        key={save._id}
+        title={save.title}
+        date={save.date}
+        url={save.url}
+        handleDeleteButton={this.handleDeleteButton}
+        getSavedArticles={this.getSavedArticles}
+      />
+    ))
+  }
 
   render() {
     return (
-      <Container fluid>
-        <Row>
-          <Col size="md-6">
-            <Jumbotron>
-              <h1>What Books Should I Read?</h1>
-            </Jumbotron>
-            <form>
-              <Input
-                value={this.state.title}
-                onChange={this.handleInputChange}
-                name="title"
-                placeholder="Title (required)"
-              />
-              <Input
-                value={this.state.author}
-                onChange={this.handleInputChange}
-                name="author"
-                placeholder="Author (required)"
-              />
-              <TextArea
-                value={this.state.synopsis}
-                onChange={this.handleInputChange}
-                name="synopsis"
-                placeholder="Synopsis (Optional)"
-              />
-              <FormBtn
-                disabled={!(this.state.author && this.state.title)}
-                onClick={this.handleFormSubmit}
-              >
-                Submit Book
-              </FormBtn>
-            </form>
-          </Col>
-          <Col size="md-6 sm-12">
-            <Jumbotron>
-              <h1>Books On My List</h1>
-            </Jumbotron>
-            {this.state.books.length ? (
-              <List>
-                {this.state.books.map(book => (
-                  <ListItem key={book._id}>
-                    <Link to={"/books/" + book._id}>
-                      <strong>
-                        {book.title} by {book.author}
-                      </strong>
-                    </Link>
-                    <DeleteBtn onClick={() => this.deleteBook(book._id)} />
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <h3>No Results to Display</h3>
-            )}
-          </Col>
-        </Row>
-      </Container>
-    );
+      <div className="container">
+        <Nav />
+
+        <Search
+          handleTopicChange={this.handleTopicChange}
+          handleStartYearChange={this.handleStartYearChange}
+          handleEndYearChange={this.handleEndYearChange}
+          handleFormSubmit={this.handleFormSubmit}
+          renderArticles={this.renderArticles}
+        />
+
+        <div className="container">
+          <div className="row">
+            <div className="col-lg-12">
+              <div className="panel panel-primary">
+                <div className="panel-heading">
+                  <h3 className="panel-title">
+                    <strong>
+                      <i className="fa fa-download" aria-hidden="true"></i> Saved Articles</strong>
+                  </h3>
+                </div>
+                <div className="panel-body">
+                  <ul className="list-group">
+                    {this.renderSaved()}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 }
 
-export default Books;
+export default Main;
