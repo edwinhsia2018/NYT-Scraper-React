@@ -1,1 +1,0 @@
-# NYT-Scraper-React
