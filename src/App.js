@@ -7,7 +7,6 @@ import './App.css';
 const App = () => (
   <Router>
     <div>
-      <Nav />
         <Route path="/" component={Main} />
     </div>
   </Router>
