@@ -71,7 +71,7 @@ class Main extends Component {
   }
 
   // Render the articles based on the search
-  renderArticles() {
+  renderArticles = () => {
     return this.state.articles.map(article => (
       <Results
         _id={article.id}
